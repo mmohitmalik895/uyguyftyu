@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dream11 AI GOD MODE (60 Teams)</title>
+
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
+
+<style>
+body{font-family:Arial;background:#0b0b0b;color:#fff;padding:15px}
+input,select{width:100%;padding:10px;margin:5px 0;border-radius:6px;border:none}
+button{padding:12px;width:100%;margin-top:10px;background:#00e5ff;color:black;border:none;border-radius:6px}
+.team{background:#1e1e1e;margin-top:10px;padding:10px;border-radius:8px}
+.row{display:flex;gap:10px}
+.row > *{flex:1}
+label{font-size:12px;color:#aaa}
+table{width:100%;margin-top:15px;border-collapse:collapse}
+td,th{border:1px solid #555;padding:6px;font-size:12px}
+</style>
+</head>
+<body>
+
+<h2>🤖 Dream11 AI GOD MODE (60 Teams)</h2>
+<p>Now with Exposure Tracking + Pair Rotation AI</p>
+
+<input type="file" accept="image/*" onchange="handleOCR(event)">
+<button onclick="fillDetectedPlayers()">⚡ Auto Fill Players</button>
+
+<div class="row">
+  <input id="exp" type="number" value="70" placeholder="Exposure %">
+  <select id="toss">
+    <option value="none">Toss</option>
+    <option value="bat">Bat</option>
+    <option value="bowl">Bowl</option>
+  </select>
+</div>
+
+<h3>👥 Enter Players (Easy Input)</h3>
+
+<label>Paste 22 Players (one per line)</label>
+<textarea id="bulkPlayers" rows="6" placeholder="Enter 22 player names..."></textarea>
+
+<button onclick="loadBulkPlayers()">⚡ Load Players</button>
+
+<div id="inputs"></div>
+
+<h3>⭐ Impact Players (1 from each side)</h3>
+<div class="row">
+  <div>
+    <input id="impact1" placeholder="Impact Player Team A">
+  </div>
+  <div>
+    <input id="impact2" placeholder="Impact Player Team B">
+  </div>
+</div>
+
+<button onclick="generateTeams()">🚀 Generate 60 Teams</button>
+
+<div id="teams"></div>
+<div id="exposure"></div>
+
+<script>
+let detectedPlayers=[];
+let pairCount={}; // 🔥 pair tracking
+
+function cleanText(line){
+ return line.replace(/[^a-zA-Z .]/g,"").trim();
+}
+
+function detectRole(name){
+ let n=name.toLowerCase();
+ if(n.includes("wk")||n.includes("keeper")) return "wk";
+ if(n.includes("bowl")) return "bowl";
+ if(n.includes("all")) return "ar";
+ return "bat";
+}
+
+async function handleOCR(e){
+ const file=e.target.files[0];
+ const { data:{text} } = await Tesseract.recognize(file,'eng');
+ let lines=text.split("\n");
+ detectedPlayers = lines.map(x=>({name:cleanText(x),role:detectRole(x)}));
+}
+
+function fillDetectedPlayers(){
+ let unique=[...new Map(detectedPlayers.map(p=>[p.name,p])).values()].slice(0,22);
+ for(let i=0;i<unique.length;i++){
+  document.getElementById("p"+i).value=unique[i].name;
+  document.getElementById("r"+i).value=unique[i].role;
+ }
+}
+
+// 🔥 NEW: Bulk input loader
+function loadBulkPlayers(){
+ let text=document.getElementById("bulkPlayers").value;
+ let lines=text.split("
+").map(x=>x.trim()).filter(x=>x);
+
+ if(lines.length!==22){
+   alert("Enter exactly 22 players");
+   return;
+ }
+
+ for(let i=0;i<22;i++){
+   document.getElementById("p"+i).value=lines[i];
+ }
+
+ alert("Players loaded ✅");
+}
+}
+
+// INPUTS (exactly 24 players required)
+const TOTAL_PLAYERS = 22; // 22 main players
+for(let i=0;i<TOTAL_PLAYERS;i++){
+ document.getElementById("inputs").innerHTML+=
+ `<input id="p${i}" placeholder="Main Player ${i+1}">
+  <select id="r${i}">
+    <option value="bat">BAT</option>
+    <option value="bowl">BOWL</option>
+    <option value="ar">AR</option>
+    <option value="wk">WK</option>
+  </select>`;
+}
+
+function buildPlayers(){
+ let arr=[];
+ let filled=0;
+ for(let i=0;i<TOTAL_PLAYERS;i++){
+  let name=(document.getElementById("p"+i).value||"").trim();
+  let role=document.getElementById("r"+i).value;
+  if(name){
+    arr.push({name,role,count:0,cCount:0,vcCount:0,team:i<12?"A":"B"}); // first 12 = team A, rest B
+    filled++;
+  }
+ }
+ // add impact players
+ let impactA=document.getElementById("impact1").value.trim();
+ let impactB=document.getElementById("impact2").value.trim();
+
+ if(!impactA || !impactB){
+   alert("Enter both impact players (Team A & Team B)");
+   return null;
+ }
+
+ arr.push({name:impactA,role:"bat",count:0,cCount:0,vcCount:0,team:"A"});
+ arr.push({name:impactB,role:"bat",count:0,cCount:0,vcCount:0,team:"B"});
+
+ if(arr.length!==24){
+   alert("Total must be 22 + 2 impact = 24 players");
+   return null;
+ }
+
+ return arr;
+ return arr;
+}
+
+function getPairKey(a,b){
+ return [a,b].sort().join("-");
+}
+
+function generateTeams(){
+ let players=buildPlayers();
+ if(!players){alert("Fill all players");return;}
+
+ pairCount={};
+
+ let totalTeams = 60;
+ let avgExposure = Math.floor((11 * totalTeams) / players.length); // equal distribution target
+
+ // captain/VC counters
+ players.forEach(p=>{
+   p.cCount = 0;
+   p.vcCount = 0;
+ });
+
+ let html="";
+
+ for(let t=0;t<totalTeams;t++){
+
+  let sorted = [...players].sort(p=>{
+    let base=Math.random()*100;
+    base += (avgExposure - p.count) * 5;
+    return {...p,score:base};
+  }).sort((a,b)=>b.score-a.score);
+
+  let team=[];
+  let countA=0, countB=0;
+
+  for(let p of sorted){
+    if(team.length>=11) break;
+
+    // max 7 from one team
+    if(p.team==="A" && countA>=7) continue;
+    if(p.team==="B" && countB>=7) continue;
+
+    let valid=true;
+    for(let existing of team){
+      let key=getPairKey(p.name,existing.name);
+      if((pairCount[key]||0)>3){ valid=false; break; }
+    }
+    if(!valid) continue;
+
+    team.push(p);
+    p.count++;
+
+    if(p.team==="A") countA++; else countB++;
+
+    for(let other of team){
+      if(other.name!==p.name){
+        let key=getPairKey(p.name,other.name);
+        pairCount[key]=(pairCount[key]||0)+1;
+      }
+    }
+  }
+
+    // update pair counts
+    for(let other of team){
+      if(other.name!==p.name){
+        let key=getPairKey(p.name,other.name);
+        pairCount[key]=(pairCount[key]||0)+1;
+      }
+    }
+  }
+
+  // 🔥 balanced captain selection (least used gets priority)
+  let captain = [...team].sort((a,b)=>a.cCount-b.cCount)[0];
+  captain.cCount++;
+
+  // 🔥 balanced vice captain
+  let vc = team
+    .filter(p=>p.name!==captain.name)
+    .sort((a,b)=>a.vcCount-b.vcCount)[0];
+  vc.vcCount++;
+
+  // 🔥 impact player logic
+  let impactA=document.getElementById("impact1").value;
+  let impactB=document.getElementById("impact2").value;
+
+  if(impactA && !team.find(p=>p.name===impactA)){
+    team[Math.floor(Math.random()*team.length)] = players.find(p=>p.name===impactA) || team[0];
+  }
+  if(impactB && !team.find(p=>p.name===impactB)){
+    team[Math.floor(Math.random()*team.length)] = players.find(p=>p.name===impactB) || team[1];
+  }
+
+  let names=team.map(p=>p.name);
+
+  html+=`<div class="team">
+  <b>Team ${t+1}</b><br>
+  ${names.join(", ")}<br>
+  ⭐ C: ${captain.name} | VC: ${vc.name}
+  </div>`;
+ }
+
+ document.getElementById("teams").innerHTML=html;
+
+ // 🔥 exposure table
+ let expHtml="<h3>📊 Player Exposure</h3><table><tr><th>Player</th><th>Teams</th><th>C</th><th>VC</th></tr>";
+ players.forEach(p=>{
+  expHtml+=`<tr><td>${p.name}</td><td>${p.count}</td><td>${p.cCount}</td><td>${p.vcCount}</td></tr>`;
+ });
+ expHtml+="</table>";
+
+ document.getElementById("exposure").innerHTML=expHtml;
+}
+</script>
+
+</body>
+</html>
